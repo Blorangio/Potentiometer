@@ -12,6 +12,11 @@ void initialize(pin_t PIN);
 void update();
 void initialize(pin_t PIN);
 void update();
+void initialize(pin_t *PINS);
+void allOff();
+void allOn();
+void onTo(int index);
+void offTo(int index);
 void update();
 void setup();
 void loop();
@@ -108,9 +113,59 @@ public:
   }
 };
 
-LED lights[5];
-pin_t pins[5] = {D0, D1, D2, D3, D4};
-Potentiometer p1;
+class LEDGroup
+{
+public:
+  LED *lightsInGroup = {};
+  pin_t *pins = {};
+  LEDGroup(LED *array)
+  {
+    lightsInGroup = array;
+  }
+  void set(LED setLights[sizeof(lightsInGroup) + 1])
+  {
+    lightsInGroup = setLights;
+  }
+  void initialize(pin_t *PINS)
+  {
+    pins = PINS;
+    for (uint i = 0; i < sizeof(lightsInGroup) + 1; i++)
+    {
+      lightsInGroup[i].initialize(pins[i]);
+    }
+  }
+  void allOff()
+  {
+    for (uint i = 0; i < sizeof(lightsInGroup) + 1; i++)
+    {
+      lightsInGroup[i].off();
+    }
+  }
+
+  void allOn()
+  {
+    for (uint i = 0; i < sizeof(lightsInGroup) + 1; i++)
+    {
+      lightsInGroup[i].on();
+    }
+  }
+
+  void onTo(int index)
+  {
+    for (int i = 0; i < index; i++)
+    {
+      lightsInGroup[i].on();
+    }
+  }
+
+  void offTo(int index)
+  {
+    for (int i = 0; i < index; i++)
+    {
+      lightsInGroup[i].off();
+    }
+  }
+};
 
 void update()
 {
@@ -120,25 +175,22 @@ void update()
   }
 }
 
+LED lightGroupings[5];
+LEDGroup lights(lightGroupings);
+
+pin_t lightPins[5] = {D0, D1, D2, D3, D4};
+Potentiometer p1;
+
 void setup()
 {
-  for (int i = 0; i < 5; i++)
-  {
-    lights[i].initialize(pins[i]);
-  }
+  lights.initialize(lightPins);
   p1.initialize(A4);
   Serial.begin(9600);
 }
 void loop()
 {
   update();
-  float leds = p1.val*6 /4095;
-  for (int i = 0; i < 5; i++)
-  {
-    lights[i].off();
-  }
-  for (int i = 0; i < leds; i++)
-  {
-    lights[i].on();
-  }
+  float leds = p1.val * 6 / 4095;
+  lights.allOff();
+  lights.onTo((int)leds);
 }
